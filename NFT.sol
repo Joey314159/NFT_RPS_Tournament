@@ -36,7 +36,7 @@ contract NFT is IERC721 {
     mapping(address => uint256) public balanceOf;
     mapping(uint256 => address) private nftToOwner;
     mapping(uint256 => address) private tokenApprovals;
-    mapping(address => mapping(address => bool)) private _operatorApprovals;
+    mapping(address => mapping(address => bool)) private operatorApprovals;
 
     function ownerOf(uint256 tokenId) public view override returns (address) {
         return nftToOwner[tokenId];
@@ -62,13 +62,13 @@ contract NFT is IERC721 {
         return tokenApprovals[tokenId];
     }
 
-    function setApprovalForAll(address operator, bool _approved) public override {
-        _operatorApprovals[msg.sender][operator] = _approved;
-        emit ApprovalForAll(msg.sender, operator, _approved);
+    function setApprovalForAll(address operator, bool approved) public override {
+        operatorApprovals[msg.sender][operator] = approved;
+        emit ApprovalForAll(msg.sender, operator, approved);
     }
 
     function isApprovedForAll(address owner, address operator) public view override returns (bool) {
-        return _operatorApprovals[owner][operator];
+        return operatorApprovals[owner][operator];
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public override {
