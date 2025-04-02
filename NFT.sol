@@ -12,16 +12,16 @@ contract NFT {
         string name;
     }
 
-    // Matches each token ID to the token item
+    //Matches each token ID to the token item
     mapping(uint256 => NFTItem) public nftList;
-    // Keeps track of how many NFTs each address has
+    //Keeps track of how many NFTs each address has
     mapping(address => uint256) public balanceOf;
-    // Matches the token ID to the owner of that NFT
+    //Matches the token ID to the owner of that NFT
     mapping(uint256 => address) private nftToOwner;
-    // Single-token approvals
+    //Single-token approvals
     mapping(uint256 => address) private tokenApprovals; 
 
-    // Events (since we removed the interface, we define them here)
+    //Events that we need in order to make this work
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
     event Burn(uint indexed id, string name, address indexed owner);
@@ -55,34 +55,39 @@ contract NFT {
         require(to != address(0), "Invalid address");
         require(msg.sender == from || getApproved(tokenId) == msg.sender, "Not authorized"); // Only single-token approvals
 
-        // Clear approvals
+        //Clear approvals
         delete tokenApprovals[tokenId];
 
-        // Transfer ownership
+        //Transfer ownership by first giving the token to the user
         nftToOwner[tokenId] = to;
+        //Than making them the owner
         nftList[tokenId].owner = to;
+        //Lastly we reduce our balance
         balanceOf[from]--;
+        //And increase their's
         balanceOf[to]++;
 
+        //Calling the Transfer event
         emit Transfer(from, to, tokenId);
     }
 
     function burn(uint256 tokenId) public {
         require(nftToOwner[tokenId] == msg.sender, "You are not the owner of this NFT");
 
-        string memory nftName = nftList[tokenId].name; // Retrieve the name before deletion
+        //Retrieve the name before deletion
+        string memory nftName = nftList[tokenId].name; 
 
-        // Remove ownership
+        //Remove ownership
         delete nftToOwner[tokenId];  
         balanceOf[msg.sender]--;
 
-        // Reduce total supply
+        //Reduce total supply
         totalSupply--;
 
-        // Emit burn event with the correct name
+        //Emit burn event with the correct name
         emit Burn(tokenId, nftName, msg.sender);
 
-        // Remove from the nftList mapping
+        //Remove from the nftList mapping
         delete nftList[tokenId]; 
     }
 }
