@@ -1,22 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IERC721 {
-    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
-    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
-    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-    event Burn(uint indexed id, string name, address indexed owner);
-
-    function balanceOf(address owner) external view returns (uint256 balance);
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-    function approve(address to, uint256 tokenId) external;
-    function getApproved(uint256 tokenId) external view returns (address);
-    function setApprovalForAll(address operator, bool _approved) external;
-    function isApprovedForAll(address owner, address operator) external view returns (bool);
-    function transferFrom(address from, address to, uint256 tokenId) external;
-}
-
-contract NFT is IERC721 {
+contract NFT {
     uint public totalSupply;
     string public name = "RPST";
     string public symbol = "TOKEN";
@@ -27,13 +12,21 @@ contract NFT is IERC721 {
         string name;
     }
 
+    // Matches each token ID to the token item
     mapping(uint256 => NFTItem) public nftList;
+    // Keeps track of how many NFTs each address has
     mapping(address => uint256) public balanceOf;
+    // Matches the token ID to the owner of that NFT
     mapping(uint256 => address) private nftToOwner;
-    mapping(uint256 => address) private tokenApprovals;
-    mapping(address => mapping(address => bool)) private operatorApprovals;
+    // Single-token approvals
+    mapping(uint256 => address) private tokenApprovals; 
 
-    function ownerOf(uint256 tokenId) public view override returns (address) {
+    // Events (since we removed the interface, we define them here)
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
+    event Burn(uint indexed id, string name, address indexed owner);
+
+    function ownerOf(uint256 tokenId) public view returns (address) {
         return nftToOwner[tokenId];
     }
 
@@ -47,29 +40,20 @@ contract NFT is IERC721 {
         return tokenId;
     }
 
-    function approve(address to, uint256 tokenId) public override {
+    function approve(address to, uint256 tokenId) public {
         require(msg.sender == nftToOwner[tokenId], "Not the owner");
         tokenApprovals[tokenId] = to;
         emit Approval(msg.sender, to, tokenId);
     }
 
-    function getApproved(uint256 tokenId) public view override returns (address) {
+    function getApproved(uint256 tokenId) public view returns (address) {
         return tokenApprovals[tokenId];
     }
 
-    function setApprovalForAll(address operator, bool approved) public override {
-        operatorApprovals[msg.sender][operator] = approved;
-        emit ApprovalForAll(msg.sender, operator, approved);
-    }
-
-    function isApprovedForAll(address owner, address operator) public view override returns (bool) {
-        return operatorApprovals[owner][operator];
-    }
-
-    function transferFrom(address from, address to, uint256 tokenId) public override {
+    function transferFrom(address from, address to, uint256 tokenId) public {
         require(nftToOwner[tokenId] == from, "Not the owner");
         require(to != address(0), "Invalid address");
-        require(msg.sender == from || getApproved(tokenId) == msg.sender || isApprovedForAll(from, msg.sender), "Not authorized");
+        require(msg.sender == from || getApproved(tokenId) == msg.sender, "Not authorized"); // Only single-token approvals
 
         // Clear approvals
         delete tokenApprovals[tokenId];
@@ -101,5 +85,4 @@ contract NFT is IERC721 {
         // Remove from the nftList mapping
         delete nftList[tokenId]; 
     }
-
 }
