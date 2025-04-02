@@ -5,7 +5,7 @@ interface IERC721 {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-    event Burn(uint indexed _id, string name, address indexed owner);
+    event Burn(uint indexed id, string name, address indexed owner);
 
     function balanceOf(address owner) external view returns (uint256 balance);
     function ownerOf(uint256 tokenId) external view returns (address owner);
@@ -14,11 +14,6 @@ interface IERC721 {
     function setApprovalForAll(address operator, bool _approved) external;
     function isApprovedForAll(address owner, address operator) external view returns (bool);
     function transferFrom(address from, address to, uint256 tokenId) external;
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) external;
-}
-
-interface IERC721Receiver {
-    function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external returns (bytes4);
 }
 
 contract NFT is IERC721 {
@@ -86,22 +81,6 @@ contract NFT is IERC721 {
         balanceOf[to]++;
 
         emit Transfer(from, to, tokenId);
-    }
-
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) public override {
-        transferFrom(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, data), "Receiver not implemented");
-    }
-
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) private returns (bool) {
-        if (to.code.length > 0) {
-            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
-            } catch {
-                revert("Receiver contract not implemented");
-            }
-        }
-        return true;
     }
 
     function burn(uint256 tokenId) public {
