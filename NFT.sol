@@ -5,6 +5,7 @@ interface IERC721 {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
+    event Burn(uint indexed _id, string name, address indexed owner);
 
     function balanceOf(address owner) external view returns (uint256 balance);
     function ownerOf(uint256 tokenId) external view returns (address owner);
@@ -28,26 +29,22 @@ contract NFT is IERC721 {
     struct NFTItem {
         uint id;
         address owner;
-        string tokenURI;
+        string name;
     }
 
     mapping(uint256 => NFTItem) public nftList;
     mapping(address => uint256) public balanceOf;
     mapping(uint256 => address) private nftToOwner;
-    mapping(uint256 => address) private _tokenApprovals;
+    mapping(uint256 => address) private tokenApprovals;
     mapping(address => mapping(address => bool)) private _operatorApprovals;
-
-    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
-        return interfaceId == type(IERC721).interfaceId;
-    }
 
     function ownerOf(uint256 tokenId) public view override returns (address) {
         return nftToOwner[tokenId];
     }
 
-    function mint(string memory _tokenURI) public returns (uint) {
+    function mint(string memory nftName) public returns (uint) {
         uint tokenId = ++totalSupply;
-        nftList[tokenId] = NFTItem(tokenId, msg.sender, _tokenURI);
+        nftList[tokenId] = NFTItem(tokenId, msg.sender, nftName);
         nftToOwner[tokenId] = msg.sender;
         balanceOf[msg.sender]++;
 
@@ -57,12 +54,12 @@ contract NFT is IERC721 {
 
     function approve(address to, uint256 tokenId) public override {
         require(msg.sender == nftToOwner[tokenId], "Not the owner");
-        _tokenApprovals[tokenId] = to;
+        tokenApprovals[tokenId] = to;
         emit Approval(msg.sender, to, tokenId);
     }
 
     function getApproved(uint256 tokenId) public view override returns (address) {
-        return _tokenApprovals[tokenId];
+        return tokenApprovals[tokenId];
     }
 
     function setApprovalForAll(address operator, bool _approved) public override {
@@ -80,7 +77,7 @@ contract NFT is IERC721 {
         require(msg.sender == from || getApproved(tokenId) == msg.sender || isApprovedForAll(from, msg.sender), "Not authorized");
 
         // Clear approvals
-        delete _tokenApprovals[tokenId];
+        delete tokenApprovals[tokenId];
 
         // Transfer ownership
         nftToOwner[tokenId] = to;
@@ -108,12 +105,22 @@ contract NFT is IERC721 {
     }
 
     function burn(uint256 tokenId) public {
-        require(nftToOwner[tokenId] == msg.sender, "Not the owner");
+        require(nftToOwner[tokenId] == msg.sender, "You are not the owner of this NFT");
 
-        address owner = msg.sender;
-        delete nftToOwner[tokenId];
-        balanceOf[owner]--;
+        string memory nftName = nftList[tokenId].name; // Retrieve the name before deletion
 
-        emit Transfer(owner, address(0), tokenId);
+        // Remove ownership
+        delete nftToOwner[tokenId];  
+        balanceOf[msg.sender]--;
+
+        // Reduce total supply
+        totalSupply--;
+
+        // Emit burn event with the correct name
+        emit Burn(tokenId, nftName, msg.sender);
+
+        // Remove from the nftList mapping
+        delete nftList[tokenId]; 
     }
+
 }
