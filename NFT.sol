@@ -1,3 +1,6 @@
+//The purpose of this contract is to create the NFT and
+//create the functions that we need such as minting the NFT
+//burning the NFT, and sending it to an address of our choosing
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
